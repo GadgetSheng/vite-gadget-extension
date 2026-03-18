@@ -1,4 +1,13 @@
-import { MockRule } from '../types';
+// Define MockRule locally to avoid import issues in injected script
+interface MockRule {
+  id: string;
+  urlPattern: string;
+  method: string;
+  status: number;
+  responseBody: string;
+  delayMs?: number;
+  active: boolean;
+}
 
 let mockRules: MockRule[] = [];
 
