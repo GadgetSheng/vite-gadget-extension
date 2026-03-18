@@ -134,5 +134,5 @@ XMLHttpRequest.prototype.send = function (...args) {
     return;
   }
 
-  return originalXHRSend.apply(this, args as any);
+  return originalXHRSend.apply(this, args);
 };
