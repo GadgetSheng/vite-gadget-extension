@@ -24,7 +24,7 @@ export default defineManifest({
     matches: ['<all_urls>'],
   }],
   web_accessible_resources: [{
-    resources: ['src/content/inject.ts'],
+    resources: ['src/content/inject.js'],
     matches: ['<all_urls>'],
   }],
   side_panel: {

@@ -9,7 +9,7 @@ console.log('[Tweak Clone] Content script loaded.')
 const script = document.createElement('script')
 
 // Determine the script URL based on environment
-const injectScriptUrl = chrome.runtime.getURL('src/content/inject.ts')
+const injectScriptUrl = chrome.runtime.getURL('src/content/inject.js')
 // Fallback logic in case `.ts` wasn't bundled properly in dev by crxjs
 // Actually, CRXJS automatically maps injected scripts if they are in web_accessible_resources
 script.src = injectScriptUrl

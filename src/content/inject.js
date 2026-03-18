@@ -1,15 +1,16 @@
+// Use plain JavaScript comments here since it may not get transpiled depending on config
 // Define MockRule locally to avoid import issues in injected script
-interface MockRule {
-  id: string;
-  urlPattern: string;
-  method: string;
-  status: number;
-  responseBody: string;
-  delayMs?: number;
-  active: boolean;
-}
+// interface MockRule {
+//   id: string;
+//   urlPattern: string;
+//   method: string;
+//   status: number;
+//   responseBody: string;
+//   delayMs?: number;
+//   active: boolean;
+// }
 
-let mockRules: MockRule[] = [];
+let mockRules = [];
 
 console.log('[Tweak Clone] Inject script loaded and running!');
 
@@ -23,7 +24,7 @@ window.addEventListener('message', (event) => {
 });
 
 // Helper to check if a request should be mocked
-const getMockRule = (url: string, method: string) => {
+const getMockRule = (url, method) => {
   return mockRules.find(
     (rule) => {
       if (!rule.active) return false;
@@ -86,15 +87,15 @@ window.fetch = async (...args) => {
 const originalXHROpen = XMLHttpRequest.prototype.open;
 const originalXHRSend = XMLHttpRequest.prototype.send;
 
-XMLHttpRequest.prototype.open = function (...args: any[]) {
-  (this as any)._tweak_method = args[0];
-  (this as any)._tweak_url = args[1];
-  return originalXHROpen.apply(this, args as any);
+XMLHttpRequest.prototype.open = function (...args) {
+  this._tweak_method = args[0];
+  this._tweak_url = args[1];
+  return originalXHROpen.apply(this, args);
 };
 
-XMLHttpRequest.prototype.send = function (...args: any[]) {
-  const method = (this as any)._tweak_method;
-  const url = (this as any)._tweak_url;
+XMLHttpRequest.prototype.send = function (...args) {
+  const method = this._tweak_method;
+  const url = this._tweak_url;
   const rule = getMockRule(url, method);
   
   if (rule) {
