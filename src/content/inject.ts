@@ -2,10 +2,13 @@ import { MockRule } from '../types';
 
 let mockRules: MockRule[] = [];
 
+console.log('[Tweak Clone] Inject script loaded and running!');
+
 // Listen for rules updates from the content script
 window.addEventListener('message', (event) => {
   if (event.source !== window) return;
   if (event.data && event.data.type === 'TWEAK_UPDATE_RULES') {
+    console.log('[Tweak Clone] Received updated rules:', event.data.rules);
     mockRules = event.data.rules;
   }
 });
@@ -50,7 +53,14 @@ window.fetch = async (...args) => {
   const rule = getMockRule(url, method);
 
   if (rule) {
-    console.log('[Tweak Clone] Mocking fetch request:', url);
+    console.log(
+      '%c[Tweak Clone]%c 🚀 Mocking fetch request:', 
+      'color: white; background: #3498db; padding: 2px 4px; border-radius: 4px;',
+      'color: inherit;',
+      url
+    );
+    console.log('[Tweak Clone] Applied Rule:', rule);
+    
     if (rule.delayMs) {
       await new Promise((resolve) => setTimeout(resolve, rule.delayMs));
     }
@@ -79,7 +89,14 @@ XMLHttpRequest.prototype.send = function (...args: any[]) {
   const rule = getMockRule(url, method);
   
   if (rule) {
-    console.log('[Tweak Clone] Mocking XHR request:', url);
+    console.log(
+      '%c[Tweak Clone]%c 🚀 Mocking XHR request:', 
+      'color: white; background: #3498db; padding: 2px 4px; border-radius: 4px;',
+      'color: inherit;',
+      url
+    );
+    console.log('[Tweak Clone] Applied Rule:', rule);
+    
     const applyMock = () => {
       Object.defineProperty(this, 'readyState', { value: 4, writable: false });
       Object.defineProperty(this, 'status', { value: rule.status, writable: false });
