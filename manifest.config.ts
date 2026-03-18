@@ -15,12 +15,17 @@ export default defineManifest({
     default_popup: 'src/popup/index.html',
   },
   permissions: [
+    'storage',
     'sidePanel',
     'contentSettings',
   ],
   content_scripts: [{
     js: ['src/content/main.tsx'],
-    matches: ['https://*/*'],
+    matches: ['<all_urls>'],
+  }],
+  web_accessible_resources: [{
+    resources: ['src/content/inject.ts'],
+    matches: ['<all_urls>'],
   }],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
