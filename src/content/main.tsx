@@ -1,15 +1,16 @@
 import { getExtensionState } from '../storage'
 
-const MSG_TYPE = 'TWEAK_UPDATE_RULES'
+const MSG_TYPE = 'GADGET_UPDATE_RULES'
 
 console.log('[gadget-extension] Content script loaded.')
 
-function postRulesToPage(globalEnabled: boolean, rules: unknown[]) {
+function postRulesToPage(globalEnabled: boolean, rules: unknown[], variables: Record<string, string>) {
   window.postMessage(
     {
       type: MSG_TYPE,
       globalEnabled,
       rules,
+      variables,
     },
     '*',
   )
@@ -17,7 +18,7 @@ function postRulesToPage(globalEnabled: boolean, rules: unknown[]) {
 
 async function pushStateToPage() {
   const state = await getExtensionState()
-  postRulesToPage(state.globalEnabled, state.rules)
+  postRulesToPage(state.globalEnabled, state.rules, state.variables)
 }
 
 const injectScriptUrl = chrome.runtime.getURL('src/content/inject.js')
@@ -36,7 +37,7 @@ script.onerror = (e) => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return
-  if (changes.rules || changes.globalEnabled) {
+  if (changes.rules || changes.globalEnabled || changes.variables) {
     void pushStateToPage()
   }
 })

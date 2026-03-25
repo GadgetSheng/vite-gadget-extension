@@ -18,6 +18,7 @@ function R(p: Partial<Rule> & Pick<Rule, 'id'>): Rule {
     statusCode: 200,
     requestPayload: '',
     responsePayload: '{}',
+    responseSnippet: '',
     responseHeaders: '',
     enabled: true,
     ...p,

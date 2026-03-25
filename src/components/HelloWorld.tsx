@@ -10,13 +10,13 @@ export default function HelloWorld(props: { msg: string }) {
       <div className="card">
         <button type="button" onClick={() => setCount(count + 1)}>
           count is
-          {' '}
+          
           {count}
         </button>
         <p>
           Edit
           <code>src/components/HelloWorld.tsx</code>
-          {' '}
+          
           to test HMR
         </p>
       </div>

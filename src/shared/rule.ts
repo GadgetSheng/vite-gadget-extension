@@ -6,7 +6,12 @@ export const STORAGE_KEYS = {
   schemaVersion: 'schemaVersion',
   globalEnabled: 'globalEnabled',
   rules: 'rules',
+  /** Gadget 风格全局变量：name -> 原始字符串值 */
+  variables: 'variables',
 } as const
+
+/** 变量名仅字母、数字、下划线 */
+export type GadgetVariables = Record<string, string>
 
 /** 旧版存储（迁移用） */
 export interface LegacyMockRule {
@@ -29,6 +34,8 @@ export interface Rule {
   statusCode: number
   requestPayload: string
   responsePayload: string
+  /** Response hook：自定义 JS（Mock 时基于 Response payload；透传 fetch 时基于真实响应体） */
+  responseSnippet: string
   responseHeaders: string
   enabled: boolean
 }
@@ -37,6 +44,7 @@ export interface ExtensionState {
   schemaVersion: number
   globalEnabled: boolean
   rules: Rule[]
+  variables: GadgetVariables
 }
 
 function newId(): string {
@@ -56,6 +64,7 @@ export function createEmptyRule(): Rule {
     statusCode: 200,
     requestPayload: '',
     responsePayload: '',
+    responseSnippet: '',
     responseHeaders: 'Content-Type: application/json',
     enabled: true,
   }
@@ -79,6 +88,7 @@ function migrateOneRule(row: unknown): Rule {
       statusCode: typeof r.statusCode === 'number' ? r.statusCode : 200,
       requestPayload: typeof r.requestPayload === 'string' ? r.requestPayload : '',
       responsePayload: typeof r.responsePayload === 'string' ? r.responsePayload : '',
+      responseSnippet: typeof r.responseSnippet === 'string' ? r.responseSnippet : '',
       responseHeaders:
         typeof r.responseHeaders === 'string' ? r.responseHeaders : 'Content-Type: application/json',
       enabled: typeof r.enabled === 'boolean' ? r.enabled : true,
@@ -94,6 +104,7 @@ function migrateOneRule(row: unknown): Rule {
       statusCode: row.status ?? 200,
       requestPayload: '',
       responsePayload: row.responseBody ?? '',
+      responseSnippet: '',
       responseHeaders: 'Content-Type: application/json',
       enabled: row.active !== false,
     }
@@ -104,4 +115,16 @@ function migrateOneRule(row: unknown): Rule {
 export function migrateRulesFromStorage(raw: unknown): Rule[] {
   if (!Array.isArray(raw)) return []
   return raw.map(migrateOneRule)
+}
+
+export function migrateVariablesFromStorage(raw: unknown): GadgetVariables {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: GadgetVariables = {}
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof k !== 'string' || !k) continue
+    if (typeof v === 'string') out[k] = v
+    else if (v === null || typeof v === 'number' || typeof v === 'boolean') out[k] = String(v)
+    else out[k] = JSON.stringify(v)
+  }
+  return out
 }
