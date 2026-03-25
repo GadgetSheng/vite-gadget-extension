@@ -20,8 +20,6 @@ export default defineManifest({
   },
   permissions: [
     'storage',
-    'sidePanel',
-    'contentSettings',
   ],
   content_scripts: [{
     js: ['src/content/main.tsx'],
@@ -32,11 +30,7 @@ export default defineManifest({
     all_frames: true,
   }],
   web_accessible_resources: [{
-    /** inject.js；light.png 需列入以便打入扩展包，供 background 切换工具栏图标 */
     resources: ['src/content/inject.js', 'public/light.png'],
     matches: ['<all_urls>'],
   }],
-  side_panel: {
-    default_path: 'src/sidepanel/index.html',
-  },
 })

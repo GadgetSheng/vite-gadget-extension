@@ -161,7 +161,8 @@ export function PayloadTabsEditor({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey)) return
+      // || e.ctrlKey 不要ctrl+F
+      if (!(e.metaKey )) return
       if (e.key !== 'f' && e.key !== 'F') return
       e.preventDefault()
       e.stopPropagation()
