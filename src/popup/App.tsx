@@ -1,161 +1,166 @@
-import { useEffect, useState } from 'react'
-import { MockRule } from '../types'
-import { getRules, saveRules } from '../storage'
+import { useMemo, useState } from 'react'
+import { DEMO_RULES, emptyDemoRule, type DemoRuleRow } from './demoData'
 import './App.css'
 
 export default function App() {
-  const [rules, setRules] = useState<MockRule[]>([])
-  const [jsonErrors, setJsonErrors] = useState<Record<string, string>>({})
+  const [globalOn, setGlobalOn] = useState(true)
+  const [rules, setRules] = useState<DemoRuleRow[]>(() => DEMO_RULES.map((r) => ({ ...r })))
+  const [expandedId, setExpandedId] = useState<string | null>(DEMO_RULES[0]?.id ?? null)
 
-  useEffect(() => {
-    getRules().then(setRules)
-  }, [])
+  const mockHint = useMemo(
+    () => '演示模式：按钮与开关仅更新本页状态，不写 storage、不拦截网络。',
+    [],
+  )
 
-  const handleSave = async (newRules: MockRule[]) => {
-    setRules(newRules)
-    await saveRules(newRules)
+  const toggleRule = (id: string) => {
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, ruleOn: !r.ruleOn } : r)))
+  }
+
+  const removeRule = (id: string) => {
+    setRules((prev) => prev.filter((r) => r.id !== id))
+    setExpandedId((cur) => (cur === id ? null : cur))
   }
 
   const addRule = () => {
-    const newRule: MockRule = {
-      id: Math.random().toString(36).substring(7),
-      urlPattern: 'api/example',
-      method: 'GET',
-      status: 200,
-      responseBody: '{"message": "Hello World"}',
-      active: true,
-      delayMs: 0
-    }
-    handleSave([...rules, newRule])
+    const row = emptyDemoRule()
+    setRules((prev) => [...prev, row])
+    setExpandedId(row.id)
   }
 
-  const toggleRule = (id: string) => {
-    const newRules = rules.map(r => r.id === id ? { ...r, active: !r.active } : r)
-    handleSave(newRules)
-  }
-
-  const deleteRule = (id: string) => {
-    handleSave(rules.filter(r => r.id !== id))
-    const newErrors = { ...jsonErrors }
-    delete newErrors[id]
-    setJsonErrors(newErrors)
-  }
-
-  const updateRule = (id: string, updates: Partial<MockRule>) => {
-    const newRules = rules.map(r => r.id === id ? { ...r, ...updates } : r)
-    
-    // Validate JSON if responseBody is being updated
-    if (updates.responseBody !== undefined) {
-      try {
-        JSON.parse(updates.responseBody)
-        setJsonErrors(prev => ({ ...prev, [id]: '' }))
-      } catch (e) {
-        setJsonErrors(prev => ({ ...prev, [id]: 'Invalid JSON format' }))
-      }
-    }
-    
-    handleSave(newRules)
-  }
-
-  const handleExport = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(rules, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "tweak_rules_export.json");
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-  }
-
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const importedRules = JSON.parse(e.target?.result as string);
-        if (Array.isArray(importedRules)) {
-          // Add imported rules, optionally generate new IDs to avoid conflicts
-          const newRules = importedRules.map(r => ({ ...r, id: Math.random().toString(36).substring(7) }));
-          const mergedRules = [...rules, ...newRules];
-          setRules(mergedRules);
-          await saveRules(mergedRules);
-        } else {
-          alert('Invalid format: Expected an array of rules.');
-        }
-      } catch (err) {
-        alert('Failed to parse JSON file.');
-      }
-    };
-    reader.readAsText(file);
-    // Reset input so the same file can be selected again
-    event.target.value = '';
+  const resetDemo = () => {
+    setRules(DEMO_RULES.map((r) => ({ ...r })))
+    setGlobalOn(true)
+    setExpandedId(DEMO_RULES[0]?.id ?? null)
   }
 
   return (
-    <div className="app-container">
-      <div className="header-actions">
-        <h2>Tweak Clone</h2>
-        <div className="action-buttons">
-          <button onClick={handleExport} className="btn-secondary" title="Export Rules">Export</button>
-          <label className="btn-secondary import-label" title="Import Rules">
-            Import
-            <input type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
-          </label>
+    <div className="demo-app">
+      <header className="demo-header">
+        <div className="demo-header__titles">
+          <h1 className="demo-title">API 模拟</h1>
+          <p className="demo-sub">{mockHint}</p>
+        </div>
+        <button
+          type="button"
+          className={`demo-play ${globalOn ? 'is-on' : ''}`}
+          onClick={() => setGlobalOn((v) => !v)}
+          aria-pressed={globalOn}
+          title="全局总开关（演示）"
+        >
+          <span className="demo-play__icon" aria-hidden>
+            {globalOn ? '▶' : '■'}
+          </span>
+          {globalOn ? '运行中' : '已暂停'}
+        </button>
+      </header>
+
+      <div className="demo-toolbar">
+        <button type="button" className="demo-btn demo-btn--primary" onClick={addRule}>
+          ＋ 新建规则
+        </button>
+        <div className="demo-toolbar__ghost">
+          <button type="button" className="demo-btn demo-btn--ghost" disabled title="Demo 未接入">
+            导出
+          </button>
+          <button type="button" className="demo-btn demo-btn--ghost" disabled title="Demo 未接入">
+            导入
+          </button>
+          <button type="button" className="demo-btn demo-btn--ghost" onClick={resetDemo}>
+            重置展示数据
+          </button>
         </div>
       </div>
-      <button onClick={addRule} className="btn-add">+ Add Mock Rule</button>
-      
-      <div className="rules-list">
-        {rules.map((rule) => (
-          <div key={rule.id} className={`rule-card ${rule.active ? 'active' : 'inactive'}`}>
-            <div className="rule-header">
-              <input 
-                type="checkbox" 
-                checked={rule.active} 
-                onChange={() => toggleRule(rule.id)} 
-                title="Enable/Disable Mock"
-              />
-              <select 
-                value={rule.method} 
-                onChange={(e) => updateRule(rule.id, { method: e.target.value })}
-              >
-                <option value="ALL">ALL</option>
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="DELETE">DELETE</option>
-              </select>
-              <input 
-                type="text" 
-                value={rule.urlPattern} 
-                onChange={(e) => updateRule(rule.id, { urlPattern: e.target.value })}
-                placeholder="URL match pattern (e.g. /api\/v1\/.*/ or exact text)"
-                className="url-input"
-                title="Supports simple substring match or regex (e.g. /pattern/)"
-              />
-              <button onClick={() => deleteRule(rule.id)} className="btn-delete" title="Delete Rule">🗑</button>
-            </div>
-            <div className="rule-details">
-              <div>
-                Status: <input type="number" value={rule.status} onChange={(e) => updateRule(rule.id, { status: Number(e.target.value) })} style={{width: '60px'}}/>
+
+      <ul className="demo-list" aria-label="规则列表">
+        {rules.map((rule) => {
+          const expanded = expandedId === rule.id
+          const mockOn = Boolean(rule.responsePayload?.trim())
+          return (
+            <li
+              key={rule.id}
+              className={`demo-card ${rule.ruleOn ? 'is-rule-on' : ''} ${!globalOn ? 'is-global-off' : ''}`}
+            >
+              <div className="demo-card__main">
+                <img
+                  className="demo-card__cover"
+                  src={rule.coverImage}
+                  alt=""
+                  width={72}
+                  height={48}
+                  decoding="async"
+                />
+                <div className="demo-card__body">
+                  <div className="demo-card__row1">
+                    <span className="demo-card__label">{rule.label}</span>
+                    <span className={`demo-method demo-method--${rule.method === '*' ? 'any' : rule.method.toLowerCase()}`}>
+                      {rule.method}
+                    </span>
+                  </div>
+                  <div className="demo-card__url" title="前缀匹配">
+                    {rule.urlPrefix}
+                  </div>
+                  <div className="demo-card__meta">
+                    <span>Delay {rule.delayMs} ms</span>
+                    <span className="demo-dot" aria-hidden />
+                    <span>状态 {rule.statusCode}</span>
+                    <span className="demo-dot" aria-hidden />
+                    <span className={mockOn ? 'tag-mock' : 'tag-pass'}>{mockOn ? 'Mock 响应' : '仅改写 / 透传'}</span>
+                  </div>
+                </div>
+                <div className="demo-card__actions">
+                  <button
+                    type="button"
+                    className={`demo-switch ${rule.ruleOn ? 'is-on' : ''}`}
+                    onClick={() => toggleRule(rule.id)}
+                    aria-pressed={rule.ruleOn}
+                    title="规则开关（演示）"
+                  >
+                    <span className="demo-switch__knob" />
+                  </button>
+                  <button
+                    type="button"
+                    className="demo-icon-btn"
+                    onClick={() => setExpandedId(expanded ? null : rule.id)}
+                    aria-expanded={expanded}
+                    title={expanded ? '收起详情' : '展开详情'}
+                  >
+                    {expanded ? '▾' : '▸'}
+                  </button>
+                  <button
+                    type="button"
+                    className="demo-icon-btn demo-icon-btn--danger"
+                    onClick={() => removeRule(rule.id)}
+                    title="删除（演示）"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-              <div>
-                Delay (ms): <input type="number" value={rule.delayMs || 0} onChange={(e) => updateRule(rule.id, { delayMs: Number(e.target.value) })} style={{width: '80px'}}/>
-              </div>
-            </div>
-            <textarea 
-              value={rule.responseBody}
-              onChange={(e) => updateRule(rule.id, { responseBody: e.target.value })}
-              className={`json-input ${jsonErrors[rule.id] ? 'has-error' : ''}`}
-              placeholder="Response Body (JSON or Text)"
-            />
-            {jsonErrors[rule.id] && <div className="error-text">{jsonErrors[rule.id]}</div>}
-          </div>
-        ))}
-        {rules.length === 0 && <p className="no-rules">No rules yet. Add one to start mocking!</p>}
-      </div>
+
+              {expanded && (
+                <div className="demo-card__detail">
+                  <label className="demo-field">
+                    <span className="demo-field__label">Request payload</span>
+                    <textarea readOnly rows={4} value={rule.requestPayload || '（空）'} className="demo-textarea" />
+                  </label>
+                  <label className="demo-field">
+                    <span className="demo-field__label">Response payload</span>
+                    <textarea readOnly rows={5} value={rule.responsePayload || '（空，不发 Mock）'} className="demo-textarea" />
+                  </label>
+                  <label className="demo-field">
+                    <span className="demo-field__label">Response headers</span>
+                    <textarea readOnly rows={3} value={rule.responseHeaders || '（空）'} className="demo-textarea" />
+                  </label>
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+
+      {rules.length === 0 && (
+        <p className="demo-empty">暂无规则。点击「新建规则」或「重置展示数据」。</p>
+      )}
     </div>
   )
 }
