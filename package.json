@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npx vitest@2.1.9 run"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -20,6 +21,7 @@
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.7.0",
     "typescript": "~5.8.3",
+    "vitest": "2.1.9",
     "vite": "^5.4.21",
     "vite-plugin-zip-pack": "^1.2.4"
   }

@@ -15,7 +15,16 @@ export interface DemoRuleRow {
   ruleOn: boolean
 }
 
-function coverSvg(label: string, accent: string): string {
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+export function coverSvg(label: string, accent: string): string {
+  const safe = escapeXml(label)
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="96" viewBox="0 0 144 96">
   <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0%" stop-color="${accent}" stop-opacity="0.35"/>
@@ -23,7 +32,7 @@ function coverSvg(label: string, accent: string): string {
   </linearGradient></defs>
   <rect width="144" height="96" rx="8" fill="#141418"/>
   <rect width="144" height="96" rx="8" fill="url(#g)"/>
-  <text x="72" y="54" text-anchor="middle" fill="#e4e4e7" font-size="11" font-family="ui-monospace,monospace">${label}</text>
+  <text x="72" y="54" text-anchor="middle" fill="#e4e4e7" font-size="11" font-family="ui-monospace,monospace">${safe}</text>
 </svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
@@ -75,8 +84,8 @@ export function emptyDemoRule(): DemoRuleRow {
     id: `new-${Date.now()}`,
     label: '新规则（演示）',
     coverImage: coverSvg('NEW', '#94a3b8'),
-    urlPrefix: 'https://',
-    method: 'GET',
+    urlPrefix: '',
+    method: '*',
     delayMs: 0,
     statusCode: 200,
     requestPayload: '',

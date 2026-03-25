@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API 模拟 — 手工验收</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 42rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      pre {
+        background: #f4f4f5;
+        padding: 1rem;
+        overflow: auto;
+        border-radius: 8px;
+      }
+      button {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>API 模拟扩展 — 验收页</h1>
+    <p>
+      1. 在扩展 Popup 中新增规则：<strong>URL 匹配片段</strong>填下面地址里会出现的连续子串（如 <code>gadget-mock-demo</code>），<strong>Response payload</strong>填非空 JSON（例如
+      <code>{"demo":true}</code>）以启用 Mock。<br />
+      2. 打开全局「运行中」与对应规则开关。<br />
+      3. 点击下方按钮；若 Mock 生效，应看到 Mock 内容而非真实页面 HTML。
+    </p>
+    <p>
+      请求地址（可按需改成你的环境，规则子串须被该 URL 包含）：
+      <code id="url-label"></code>
+    </p>
+    <p>
+      <button type="button" id="btn-fetch">fetch GET</button>
+      <button type="button" id="btn-xhr">XHR GET</button>
+    </p>
+    <h2>结果</h2>
+    <pre id="out">（尚未请求）</pre>
+
+    <script>
+      const TARGET = 'https://example.com/api/gadget-mock-demo'
+      document.getElementById('url-label').textContent = TARGET
+
+      const out = document.getElementById('out')
+
+      document.getElementById('btn-fetch').onclick = async () => {
+        out.textContent = '请求中…'
+        try {
+          const r = await fetch(TARGET)
+          const text = await r.text()
+          out.textContent = 'status: ' + r.status + '\n\n' + text.slice(0, 2000)
+        } catch (e) {
+          out.textContent = String(e)
+        }
+      }
+
+      document.getElementById('btn-xhr').onclick = () => {
+        out.textContent = '请求中…'
+        const xhr = new XMLHttpRequest()
+        xhr.open('GET', TARGET)
+        xhr.onload = () => {
+          out.textContent = 'status: ' + xhr.status + '\n\n' + String(xhr.responseText).slice(0, 2000)
+        }
+        xhr.onerror = () => {
+          out.textContent = 'XHR error'
+        }
+        xhr.send()
+      }
+    </script>
+  </body>
+</html>

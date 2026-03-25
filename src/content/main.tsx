@@ -1,51 +1,42 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './views/App.tsx'
-import { getRules } from '../storage'
+import { getExtensionState } from '../storage'
 
-console.log('[Tweak Clone] Content script loaded.')
+const MSG_TYPE = 'TWEAK_UPDATE_RULES'
 
-// 1. Inject the mocking script into the page's MAIN world
-const script = document.createElement('script')
+console.log('[gadget-extension] Content script loaded.')
 
-// Determine the script URL based on environment
+function postRulesToPage(globalEnabled: boolean, rules: unknown[]) {
+  window.postMessage(
+    {
+      type: MSG_TYPE,
+      globalEnabled,
+      rules,
+    },
+    '*',
+  )
+}
+
+async function pushStateToPage() {
+  const state = await getExtensionState()
+  postRulesToPage(state.globalEnabled, state.rules)
+}
+
 const injectScriptUrl = chrome.runtime.getURL('src/content/inject.js')
-// Fallback logic in case `.ts` wasn't bundled properly in dev by crxjs
-// Actually, CRXJS automatically maps injected scripts if they are in web_accessible_resources
+const script = document.createElement('script')
 script.src = injectScriptUrl
-
+/** 尽量按插入顺序执行，缩短与页面首包 fetch 的竞态窗口 */
+script.async = false
 script.onload = () => {
-  console.log('[Tweak Clone] Inject script loaded successfully:', injectScriptUrl)
   script.remove()
+  void pushStateToPage()
 }
 script.onerror = (e) => {
-  console.error('[Tweak Clone] Failed to load inject script:', injectScriptUrl, e)
+  console.error('[gadget-extension] Failed to load inject script:', injectScriptUrl, e)
 }
 ;(document.head || document.documentElement).appendChild(script)
 
-// 2. Establish the bridge to send rules to the injected script
-const sendRulesToPage = async () => {
-  const rules = await getRules()
-  console.log('[Tweak Clone] Content script sending rules to page:', rules)
-  window.postMessage({ type: 'TWEAK_UPDATE_RULES', rules }, '*')
-}
-
-// Send rules initially after a short delay to ensure script is injected and ready
-setTimeout(sendRulesToPage, 100)
-
-// Listen for rule changes from storage
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.rules) {
-    sendRulesToPage()
+  if (area !== 'local') return
+  if (changes.rules || changes.globalEnabled) {
+    void pushStateToPage()
   }
 })
-
-// Optional: keep the floating UI if needed, or remove it. Let's keep it for now.
-const container = document.createElement('div')
-container.id = 'crxjs-app'
-document.body.appendChild(container)
-createRoot(container).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)

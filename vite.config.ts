@@ -24,4 +24,10 @@ export default defineConfig({
       ],
     },
   },
+  // Vitest merges `test` when running via `npm run test`
+  // @ts-expect-error Vitest UserConfig extension
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
 })
