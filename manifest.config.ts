@@ -6,13 +6,17 @@ export default defineManifest({
   name: pkg.name,
   version: pkg.version,
   icons: {
-    48: 'public/logo.png',
+    48: 'public/dark.png',
   },
   action: {
     default_icon: {
-      48: 'public/logo.png',
+      48: 'public/dark.png',
     },
     default_popup: 'src/popup/index.html',
+  },
+  background: {
+    service_worker: 'src/background.ts',
+    type: 'module',
   },
   permissions: [
     'storage',
@@ -28,7 +32,8 @@ export default defineManifest({
     all_frames: true,
   }],
   web_accessible_resources: [{
-    resources: ['src/content/inject.js'],
+    /** inject.js；light.png 需列入以便打入扩展包，供 background 切换工具栏图标 */
+    resources: ['src/content/inject.js', 'public/light.png'],
     matches: ['<all_urls>'],
   }],
   side_panel: {
