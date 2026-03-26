@@ -86,11 +86,16 @@ function migrateOneRule(row: unknown): Rule {
       method: typeof r.method === 'string' ? r.method : 'GET',
       delayMs: typeof r.delayMs === 'number' ? r.delayMs : 0,
       statusCode: typeof r.statusCode === 'number' ? r.statusCode : 200,
-      requestPayload: typeof r.requestPayload === 'string' ? r.requestPayload : '',
-      responsePayload: typeof r.responsePayload === 'string' ? r.responsePayload : '',
-      responseSnippet: typeof r.responseSnippet === 'string' ? r.responseSnippet : '',
+      requestPayload:
+        typeof r.requestPayload === 'string' ? r.requestPayload : '',
+      responsePayload:
+        typeof r.responsePayload === 'string' ? r.responsePayload : '',
+      responseSnippet:
+        typeof r.responseSnippet === 'string' ? r.responseSnippet : '',
       responseHeaders:
-        typeof r.responseHeaders === 'string' ? r.responseHeaders : 'Content-Type: application/json',
+        typeof r.responseHeaders === 'string'
+          ? r.responseHeaders
+          : 'Content-Type: application/json',
       enabled: typeof r.enabled === 'boolean' ? r.enabled : true,
     }
   }
@@ -123,7 +128,8 @@ export function migrateVariablesFromStorage(raw: unknown): GadgetVariables {
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
     if (typeof k !== 'string' || !k) continue
     if (typeof v === 'string') out[k] = v
-    else if (v === null || typeof v === 'number' || typeof v === 'boolean') out[k] = String(v)
+    else if (v === null || typeof v === 'number' || typeof v === 'boolean')
+      out[k] = String(v)
     else out[k] = JSON.stringify(v)
   }
   return out

@@ -1,1 +1,6 @@
-export type { Rule, ExtensionState, LegacyMockRule, GadgetVariables } from './shared/rule'
+export type {
+  Rule,
+  ExtensionState,
+  LegacyMockRule,
+  GadgetVariables,
+} from './shared/rule'

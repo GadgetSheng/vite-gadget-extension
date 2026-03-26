@@ -8,7 +8,10 @@ const QUOTED_TOKEN = /"\$gadget\.var\.([A-Za-z0-9_]+)"/g
  * 1. 先替换带引号整段 `"$gadget.var.NAME"` → JSON.stringify(原始值)
  * 2. 再替换剩余 `$gadget.var.NAME`：未定义则保留原 token；已定义则按 JSON 字面量或字符串输出
  */
-export function expandGadgetVariables(text: string, vars: GadgetVariables): string {
+export function expandGadgetVariables(
+  text: string,
+  vars: GadgetVariables
+): string {
   if (text == null || text === '') return text
   let out = String(text)
 
@@ -39,7 +42,9 @@ function formatUnquotedReplacement(raw: string): string {
 }
 
 /** Response hook 中 `vars`：各值尝试 JSON.parse，失败则保留字符串 */
-export function parseVariablesForHook(raw: GadgetVariables): Record<string, unknown> {
+export function parseVariablesForHook(
+  raw: GadgetVariables
+): Record<string, unknown> {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(raw)) {
     if (!k) continue

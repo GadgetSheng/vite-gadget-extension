@@ -81,7 +81,7 @@ class CompactSearchPanel implements Panel {
     label: string,
     title: string,
     pressed: boolean,
-    wholeWordStyle?: boolean,
+    wholeWordStyle?: boolean
   ): HTMLButtonElement {
     const btn = document.createElement('button')
     btn.type = 'button'
@@ -162,7 +162,10 @@ class CompactSearchPanel implements Panel {
   private setQuery(q: SearchQuery) {
     this.query = q
     this.searchField.value = q.search
-    this.caseBtn.setAttribute('aria-pressed', q.caseSensitive ? 'true' : 'false')
+    this.caseBtn.setAttribute(
+      'aria-pressed',
+      q.caseSensitive ? 'true' : 'false'
+    )
     this.wordBtn.setAttribute('aria-pressed', q.wholeWord ? 'true' : 'false')
     this.reBtn.setAttribute('aria-pressed', q.regexp ? 'true' : 'false')
   }

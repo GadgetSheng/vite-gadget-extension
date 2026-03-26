@@ -38,7 +38,10 @@ export function urlMatchHaystacks(requestUrl: string): string[] {
   return [...set]
 }
 
-function substringMatchOnHaystacks(haystacks: string[], rawPattern: string): boolean {
+function substringMatchOnHaystacks(
+  haystacks: string[],
+  rawPattern: string
+): boolean {
   const rawLower = rawPattern.toLowerCase()
   for (const cand of haystacks) {
     const h = cand.toLowerCase()
@@ -57,7 +60,10 @@ function substringMatchOnHaystacks(haystacks: string[], rawPattern: string): boo
  * - `re:表达式`：按正则匹配，强制 `i`，对原始与 decodeURI 任一命中即可
  * - `/pattern/flags`：`tryParseSlashRegex` 成功则按正则
  */
-export function urlRuleMatches(requestUrl: string, urlPattern: string): boolean {
+export function urlRuleMatches(
+  requestUrl: string,
+  urlPattern: string
+): boolean {
   const raw = urlPattern.trim()
   if (!raw) return false
   const u = String(requestUrl).trim()
@@ -86,7 +92,10 @@ export function urlRuleMatches(requestUrl: string, urlPattern: string): boolean 
   return substringMatchOnHaystacks(haystacks, raw)
 }
 
-export function methodMatches(ruleMethod: string, requestMethod: string): boolean {
+export function methodMatches(
+  ruleMethod: string,
+  requestMethod: string
+): boolean {
   const rm = (ruleMethod || 'GET').toUpperCase()
   if (rm === '*') return true
   return rm === (requestMethod || 'GET').toUpperCase()
@@ -103,11 +112,14 @@ export function findMatchingRule(
   rules: Rule[],
   globalEnabled: boolean,
   requestUrl: string,
-  requestMethod: string,
+  requestMethod: string
 ): Rule | undefined {
   if (!globalEnabled) return undefined
   return rules.find(
-    (r) => r.enabled && urlRuleMatches(requestUrl, r.urlPrefix) && methodMatches(r.method, requestMethod),
+    (r) =>
+      r.enabled &&
+      urlRuleMatches(requestUrl, r.urlPrefix) &&
+      methodMatches(r.method, requestMethod)
   )
 }
 

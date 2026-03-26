@@ -6,8 +6,8 @@ import {
   parseResponseHeadersBlock,
   tryParseSlashRegex,
   urlRuleMatches,
-} from './matchRule'
-import type { Rule } from './rule'
+} from '../src/shared/matchRule'
+import type { Rule } from '../src/shared/rule'
 
 function R(p: Partial<Rule> & Pick<Rule, 'id'>): Rule {
   return {
@@ -32,8 +32,12 @@ describe('urlRuleMatches', () => {
   })
 
   it('re: regex with case insensitive', () => {
-    expect(urlRuleMatches('https://a.com/QueryWorkBenchList', 're:queryworkbench')).toBe(true)
-    expect(urlRuleMatches('https://a.com/other', 're:queryworkbench')).toBe(false)
+    expect(
+      urlRuleMatches('https://a.com/QueryWorkBenchList', 're:queryworkbench')
+    ).toBe(true)
+    expect(urlRuleMatches('https://a.com/other', 're:queryworkbench')).toBe(
+      false
+    )
     expect(urlRuleMatches('https://a.com/v1', 're:v\\d+')).toBe(true)
   })
 
@@ -43,7 +47,9 @@ describe('urlRuleMatches', () => {
 
   it('slash regex form', () => {
     expect(urlRuleMatches('https://host/QueryList', '/querylist/i')).toBe(true)
-    expect(urlRuleMatches('https://host/xxQueryListyy', '/^querylist$/i')).toBe(false)
+    expect(urlRuleMatches('https://host/xxQueryListyy', '/^querylist$/i')).toBe(
+      false
+    )
   })
 
   it('path-like string falls back to substring when flags invalid', () => {
@@ -52,12 +58,17 @@ describe('urlRuleMatches', () => {
 
   it('leading slash pattern also matches without slash in URL (e.g. query)', () => {
     expect(
-      urlRuleMatches('https://host/api/call?action=queryWorkBenchList&x=1', '/queryWorkBenchList'),
+      urlRuleMatches(
+        'https://host/api/call?action=queryWorkBenchList&x=1',
+        '/queryWorkBenchList'
+      )
     ).toBe(true)
   })
 
   it('matches when path segment is percent-encoded', () => {
-    expect(urlRuleMatches('https://h.com/%71ueryWorkBenchList', 'queryWorkBenchList')).toBe(true)
+    expect(
+      urlRuleMatches('https://h.com/%71ueryWorkBenchList', 'queryWorkBenchList')
+    ).toBe(true)
   })
 })
 
@@ -84,15 +95,24 @@ describe('methodMatches', () => {
 describe('findMatchingRule', () => {
   const rules = [
     R({ id: 'a', urlPrefix: 'https://x.com', enabled: false }),
-    R({ id: 'b', urlPrefix: 'https://x.com/api', method: 'GET', responsePayload: '{}' }),
+    R({
+      id: 'b',
+      urlPrefix: 'https://x.com/api',
+      method: 'GET',
+      responsePayload: '{}',
+    }),
     R({ id: 'c', urlPrefix: 'https://x.com/api', method: 'POST' }),
   ]
 
   it('returns undefined when global off', () => {
-    expect(findMatchingRule(rules, false, 'https://x.com/api/a', 'GET')).toBeUndefined()
+    expect(
+      findMatchingRule(rules, false, 'https://x.com/api/a', 'GET')
+    ).toBeUndefined()
   })
   it('skips disabled', () => {
-    expect(findMatchingRule(rules, true, 'https://x.com/foo', 'GET')).toBeUndefined()
+    expect(
+      findMatchingRule(rules, true, 'https://x.com/foo', 'GET')
+    ).toBeUndefined()
   })
   it('first match wins', () => {
     const hit = findMatchingRule(rules, true, 'https://x.com/api/foo', 'GET')

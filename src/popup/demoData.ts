@@ -47,7 +47,8 @@ export const DEMO_RULES: DemoRuleRow[] = [
     delayMs: 0,
     statusCode: 200,
     requestPayload: '—',
-    responsePayload: '{\n  "id": "u_1024",\n  "name": "演示用户",\n  "avatar": "https://picsum.photos/seed/user/64/64"\n}',
+    responsePayload:
+      '{\n  "id": "u_1024",\n  "name": "演示用户",\n  "avatar": "https://picsum.photos/seed/user/64/64"\n}',
     responseHeaders: 'Content-Type: application/json',
     ruleOn: true,
   },
@@ -59,7 +60,8 @@ export const DEMO_RULES: DemoRuleRow[] = [
     method: 'POST',
     delayMs: 400,
     statusCode: 200,
-    requestPayload: '{\n  "sku": "DEMO-SKU",\n  "qty": 1,\n  "note": "由扩展演示数据注入"\n}',
+    requestPayload:
+      '{\n  "sku": "DEMO-SKU",\n  "qty": 1,\n  "note": "由扩展演示数据注入"\n}',
     responsePayload: '',
     responseHeaders: '—',
     ruleOn: false,

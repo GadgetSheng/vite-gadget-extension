@@ -7,7 +7,11 @@ import { EditorView, keymap } from '@codemirror/view'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createCompactSearchPanel } from './compactSearchPanel'
 
-export type PayloadField = 'requestPayload' | 'responsePayload' | 'responseHeaders' | 'responseSnippet'
+export type PayloadField =
+  | 'requestPayload'
+  | 'responsePayload'
+  | 'responseHeaders'
+  | 'responseSnippet'
 
 type TabId = 'response' | 'request' | 'headers' | 'snippet'
 
@@ -56,7 +60,7 @@ const editorChrome = EditorView.theme(
       boxShadow: 'inset 0 0 0 1px rgba(250, 204, 21, 0.65)',
     },
   },
-  { dark: true },
+  { dark: true }
 )
 
 /** 禁用「上一处」快捷键，仅保留 Enter / Mod-g 等向前搜索 */
@@ -64,7 +68,7 @@ const searchNoPrevKeymap = Prec.high(
   keymap.of([
     { key: 'Shift-Mod-g', run: () => true, preventDefault: true },
     { key: 'Shift-F3', run: () => true, preventDefault: true },
-  ]),
+  ])
 )
 
 export interface PayloadTabsEditorProps {
@@ -112,12 +116,16 @@ export function PayloadTabsEditor({
           return false
         },
       }),
-    [],
+    []
   )
 
   const extensions = useMemo(() => {
     const base = [
-      search({ top: true, literal: true, createPanel: createCompactSearchPanel }),
+      search({
+        top: true,
+        literal: true,
+        createPanel: createCompactSearchPanel,
+      }),
       searchNoPrevKeymap,
       editorChrome,
       focusTracker,
@@ -135,7 +143,7 @@ export function PayloadTabsEditor({
     (next: string) => {
       onFieldChange(TAB_TO_FIELD[tab], next)
     },
-    [onFieldChange, tab],
+    [onFieldChange, tab]
   )
 
   const handleFormat = useCallback(() => {
@@ -162,7 +170,7 @@ export function PayloadTabsEditor({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // || e.ctrlKey 不要ctrl+F
-      if (!(e.metaKey )) return
+      if (!e.metaKey) return
       if (e.key !== 'f' && e.key !== 'F') return
       e.preventDefault()
       e.stopPropagation()
@@ -182,7 +190,11 @@ export function PayloadTabsEditor({
   return (
     <div className="payload-tabs-editor">
       <div className="payload-tabs-editor__bar">
-        <div className="payload-tabs-editor__tabs" role="tablist" aria-label="Mock 载荷">
+        <div
+          className="payload-tabs-editor__tabs"
+          role="tablist"
+          aria-label="Mock 载荷"
+        >
           <button
             type="button"
             role="tab"
@@ -249,7 +261,11 @@ export function PayloadTabsEditor({
           value={value}
           height="200px"
           theme="dark"
-          basicSetup={{ lineNumbers: true, foldGutter: false, searchKeymap: true }}
+          basicSetup={{
+            lineNumbers: true,
+            foldGutter: false,
+            searchKeymap: true,
+          }}
           extensions={extensions}
           placeholder={PLACEHOLDERS[tab]}
           onChange={handleChange}
@@ -264,14 +280,21 @@ export function PayloadTabsEditor({
 
       {tab === 'snippet' ? (
         <p className="payload-tabs-editor__snippet-hint">
-          ：可访问 <code>response</code>（Mock 时为下方 Response payload 解析结果；透传 <code>fetch</code> 时为真实响应体）、
-          <code>url</code>、<code>method</code>、<code>body</code>、<code>vars</code>（见 Popup「自定义变量」）、<code>chance</code>（占位）、
-          <code>_</code>（<code>merge</code> / <code>pick</code> / <code>isEqual</code>）。代码体需 <code>return</code>；抛错或仅
-          <code>undefined</code> 时回退为未跑脚本的响应文本。透传路径下 <strong>XHR</strong> 不执行 snippet。
+          ：可访问 <code>response</code>（Mock 时为下方 Response payload
+          解析结果；透传 <code>fetch</code> 时为真实响应体）、
+          <code>url</code>、<code>method</code>、<code>body</code>、
+          <code>vars</code>（见 Popup「自定义变量」）、<code>chance</code>
+          （占位）、
+          <code>_</code>（<code>merge</code> / <code>pick</code> /{' '}
+          <code>isEqual</code>）。代码体需 <code>return</code>；抛错或仅
+          <code>undefined</code> 时回退为未跑脚本的响应文本。透传路径下{' '}
+          <strong>XHR</strong> 不执行 snippet。
         </p>
       ) : null}
 
-      <p className="payload-tabs-editor__hint">在此编辑 Mock 响应等内容；⌘F / Ctrl+F 在编辑器内查找</p>
+      <p className="payload-tabs-editor__hint">
+        在此编辑 Mock 响应等内容；⌘F / Ctrl+F 在编辑器内查找
+      </p>
     </div>
   )
 }

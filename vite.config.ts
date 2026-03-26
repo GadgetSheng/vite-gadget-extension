@@ -17,17 +17,30 @@ export default defineConfig({
     crx({ manifest }),
     zip({ outDir: 'release', outFileName: `crx-${name}-${version}.zip` }),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        inject: path.resolve(__dirname, 'src/content/inject.ts'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'inject') {
+            return 'src/content/inject.js'
+          }
+          return 'assets/[name]-[hash].js'
+        },
+      },
+    },
+  },
   server: {
     cors: {
-      origin: [
-        /chrome-extension:\/\//,
-      ],
+      origin: [/chrome-extension:\/\//],
     },
   },
   // Vitest merges `test` when running via `npm run test`
   // @ts-expect-error Vitest UserConfig extension
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['__tests__/**/*.test.ts'],
   },
 })

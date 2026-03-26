@@ -29,8 +29,10 @@
   <body>
     <h1>API 模拟扩展 — 验收页</h1>
     <p>
-      1. 在扩展 Popup 中新增规则：<strong>URL 匹配片段</strong>填下面地址里会出现的连续子串（如 <code>gadget-mock-demo</code>），<strong>Response payload</strong>填非空 JSON（例如
-      <code>{"demo":true}</code>）以启用 Mock。<br />
+      1. 在扩展 Popup 中新增规则：<strong>URL 匹配片段</strong
+      >填下面地址里会出现的连续子串（如 <code>gadget-mock-demo</code>），<strong
+        >Response payload</strong
+      >填非空 JSON（例如 <code>{"demo":true}</code>）以启用 Mock。<br />
       2. 打开全局「运行中」与对应规则开关。<br />
       3. 点击下方按钮；若 Mock 生效，应看到 Mock 内容而非真实页面 HTML。
     </p>
@@ -67,7 +69,11 @@
         const xhr = new XMLHttpRequest()
         xhr.open('GET', TARGET)
         xhr.onload = () => {
-          out.textContent = 'status: ' + xhr.status + '\n\n' + String(xhr.responseText).slice(0, 2000)
+          out.textContent =
+            'status: ' +
+            xhr.status +
+            '\n\n' +
+            String(xhr.responseText).slice(0, 2000)
         }
         xhr.onerror = () => {
           out.textContent = 'XHR error'

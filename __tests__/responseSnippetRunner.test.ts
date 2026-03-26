@@ -6,7 +6,7 @@ import {
   parseHookResponseRaw,
   runResponseSnippet,
   stringifySnippetResult,
-} from './responseSnippetRunner'
+} from '../src/shared/responseSnippetRunner'
 
 describe('parseHookResponseRaw', () => {
   it('parses JSON object', () => {
@@ -85,7 +85,7 @@ describe('runResponseSnippet', () => {
         url: '',
         method: 'GET',
         body: '',
-      }),
+      })
     ).toBe('ok')
   })
 

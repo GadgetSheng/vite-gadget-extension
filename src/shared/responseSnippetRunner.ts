@@ -27,7 +27,10 @@ export function merge(target: unknown, ...sources: unknown[]): unknown {
   return target
 }
 
-export function pick<T extends object>(obj: T | null | undefined, keys: string[]): Partial<T> {
+export function pick<T extends object>(
+  obj: T | null | undefined,
+  keys: string[]
+): Partial<T> {
   if (obj == null || typeof obj !== 'object') return {}
   const out: Partial<T> = {}
   for (const k of keys) {
@@ -40,7 +43,13 @@ export function pick<T extends object>(obj: T | null | undefined, keys: string[]
 
 export function isEqual(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true
-  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false
+  if (
+    a === null ||
+    b === null ||
+    typeof a !== 'object' ||
+    typeof b !== 'object'
+  )
+    return false
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false
     for (let i = 0; i < a.length; i++) {
@@ -53,7 +62,13 @@ export function isEqual(a: unknown, b: unknown): boolean {
   const bk = Object.keys(b as object)
   if (ak.length !== bk.length) return false
   for (const k of ak) {
-    if (!isEqual((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k])) return false
+    if (
+      !isEqual(
+        (a as Record<string, unknown>)[k],
+        (b as Record<string, unknown>)[k]
+      )
+    )
+      return false
   }
   return true
 }
@@ -70,7 +85,7 @@ export function createChanceStub(): unknown {
       get() {
         return () => null
       },
-    },
+    }
   )
 }
 
@@ -91,11 +106,15 @@ export function parseHookResponseRaw(text: string): unknown {
  * 将用户脚本返回值转为 Response body 字符串。
  * `undefined` 回退为未改动的原始文本。
  */
-export function stringifySnippetResult(result: unknown, fallbackRaw: string): string {
+export function stringifySnippetResult(
+  result: unknown,
+  fallbackRaw: string
+): string {
   if (result === undefined) return fallbackRaw
   if (result === null) return 'null'
   if (typeof result === 'string') return result
-  if (typeof result === 'number' || typeof result === 'boolean') return JSON.stringify(result)
+  if (typeof result === 'number' || typeof result === 'boolean')
+    return JSON.stringify(result)
   if (typeof result === 'bigint') return String(result)
   if (typeof result === 'object') {
     try {
@@ -139,7 +158,7 @@ export function runResponseSnippet(opts: RunResponseSnippetOptions): string {
       'vars',
       'chance',
       '_',
-      `"use strict";\n${t}`,
+      `"use strict";\n${t}`
     ) as (
       r: unknown,
       u: string,
@@ -147,13 +166,15 @@ export function runResponseSnippet(opts: RunResponseSnippetOptions): string {
       b: string,
       v: Record<string, unknown>,
       c: unknown,
-      lodash: ReturnType<typeof createGadgetLodash>,
+      lodash: ReturnType<typeof createGadgetLodash>
     ) => unknown
 
     const result = fn(response, url, method, body, vars, chance, _)
     return stringifySnippetResult(result, responseRaw)
   } catch (e) {
-    const log = onError ?? ((err: unknown) => console.error('[gadget-mock] response snippet', err))
+    const log =
+      onError ??
+      ((err: unknown) => console.error('[gadget-mock] response snippet', err))
     log(e)
     return responseRaw
   }

@@ -4,7 +4,11 @@ const MSG_TYPE = 'GADGET_UPDATE_RULES'
 
 console.log('[gadget-extension] Content script loaded.')
 
-function postRulesToPage(globalEnabled: boolean, rules: unknown[], variables: Record<string, string>) {
+function postRulesToPage(
+  globalEnabled: boolean,
+  rules: unknown[],
+  variables: Record<string, string>
+) {
   window.postMessage(
     {
       type: MSG_TYPE,
@@ -12,7 +16,7 @@ function postRulesToPage(globalEnabled: boolean, rules: unknown[], variables: Re
       rules,
       variables,
     },
-    '*',
+    '*'
   )
 }
 
@@ -31,7 +35,11 @@ script.onload = () => {
   void pushStateToPage()
 }
 script.onerror = (e) => {
-  console.error('[gadget-extension] Failed to load inject script:', injectScriptUrl, e)
+  console.error(
+    '[gadget-extension] Failed to load inject script:',
+    injectScriptUrl,
+    e
+  )
 }
 ;(document.head || document.documentElement).appendChild(script)
 

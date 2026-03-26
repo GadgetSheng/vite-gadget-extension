@@ -1,9 +1,11 @@
 /* 页面 MAIN world：与 src/shared/matchRule.ts 逻辑保持一致 */
-let gadgetGlobalEnabled = true
-let gadgetRules = []
-let gadgetVariables = {}
+import type { Rule, GadgetVariables } from '@/shared/rule'
 
-function gadgetMockDebugOn() {
+let gadgetGlobalEnabled = true
+let gadgetRules: Rule[] = []
+let gadgetVariables: GadgetVariables = {}
+
+function gadgetMockDebugOn(): boolean {
   try {
     return sessionStorage.getItem('gadget-mock-debug') === '1'
   } catch {
@@ -11,8 +13,7 @@ function gadgetMockDebugOn() {
   }
 }
 
-/** 与 src/shared/matchRule.ts 一致：子串(忽略大小写) / re: / /pat/flags */
-function tryParseSlashRegex(pattern) {
+function tryParseSlashRegex(pattern: unknown): RegExp | null {
   const s = String(pattern).trim()
   if (!s.startsWith('/') || s.length < 2) return null
   const last = s.lastIndexOf('/')
@@ -28,9 +29,9 @@ function tryParseSlashRegex(pattern) {
   }
 }
 
-function urlMatchHaystacks(requestUrl) {
+function urlMatchHaystacks(requestUrl: string): string[] {
   const u = String(requestUrl).trim()
-  const set = new Set()
+  const set = new Set<string>()
   set.add(u)
   try {
     set.add(decodeURI(u))
@@ -45,7 +46,10 @@ function urlMatchHaystacks(requestUrl) {
   return [...set]
 }
 
-function substringMatchOnHaystacks(haystacks, rawPattern) {
+function substringMatchOnHaystacks(
+  haystacks: string[],
+  rawPattern: string
+): boolean {
   const rawLower = String(rawPattern).toLowerCase()
   for (let i = 0; i < haystacks.length; i++) {
     const h = String(haystacks[i]).toLowerCase()
@@ -58,7 +62,7 @@ function substringMatchOnHaystacks(haystacks, rawPattern) {
   return false
 }
 
-function urlRuleMatches(requestUrl, urlPattern) {
+function urlRuleMatches(requestUrl: string, urlPattern: string): boolean {
   const raw = String(urlPattern).trim()
   if (!raw) return false
   const u = String(requestUrl).trim()
@@ -93,7 +97,21 @@ function urlRuleMatches(requestUrl, urlPattern) {
   return substringMatchOnHaystacks(haystacks, raw)
 }
 
-function logGadgetMock(rule, requestUrl, method, outcome, detail) {
+interface LogDetail {
+  status?: number
+  delayMs?: number
+  bodyPreview?: string
+  note?: string
+  [key: string]: unknown
+}
+
+function logGadgetMock(
+  rule: Rule,
+  requestUrl: string,
+  method: string,
+  outcome: string,
+  detail?: LogDetail
+): void {
   const info = {
     label: rule.label || '(无别名)',
     ruleId: rule.id,
@@ -106,24 +124,24 @@ function logGadgetMock(rule, requestUrl, method, outcome, detail) {
     '%c[gadget-mock]%c ' + outcome,
     'color:#042f2e;background:#2dd4bf;padding:2px 6px;border-radius:4px;font-weight:700;',
     'color:inherit;font-weight:600;',
-    info,
+    info
   )
 }
 
-function methodMatches(ruleMethod, requestMethod) {
+function methodMatches(ruleMethod: string, requestMethod: string): boolean {
   const rm = (ruleMethod || 'GET').toUpperCase()
   if (rm === '*') return true
   return rm === (requestMethod || 'GET').toUpperCase()
 }
 
-function isMockEnabled(rule) {
+function isMockEnabled(rule: Rule): boolean {
   return !!(rule.responsePayload && String(rule.responsePayload).trim())
 }
 
-function findRule(requestUrl, requestMethod) {
+function findRule(requestUrl: string, requestMethod: string): Rule | undefined {
   if (!gadgetGlobalEnabled) return undefined
   const list = gadgetRules || []
-  let urlHitWrongMethod = null
+  let urlHitWrongMethod: Rule | null = null
   for (let i = 0; i < list.length; i++) {
     const r = list[i]
     if (!r.enabled) continue
@@ -145,20 +163,22 @@ function findRule(requestUrl, requestMethod) {
         requestMethod: String(requestMethod || 'GET').toUpperCase(),
         url: requestUrl,
         hint: '在 Popup 将 Method 改为与 Network 一致，或改为 *',
-      },
+      }
     )
   } else if (gadgetMockDebugOn() && list.some((r) => r.enabled)) {
     console.log('[gadget-mock] 未命中（URL 与启用规则均不匹配）', {
       url: requestUrl,
       method: String(requestMethod || 'GET').toUpperCase(),
-      patterns: list.filter((r) => r.enabled).map((r) => ({ method: r.method, url: r.urlPrefix })),
+      patterns: list
+        .filter((r) => r.enabled)
+        .map((r) => ({ method: r.method, url: r.urlPrefix })),
     })
   }
   return undefined
 }
 
-function parseHeaders(block) {
-  const h = {}
+function parseHeaders(block: unknown): Record<string, string> {
+  const h: Record<string, string> = {}
   const text = block == null ? '' : String(block)
   if (!text.trim()) {
     h['Content-Type'] = 'application/json'
@@ -182,7 +202,7 @@ function parseHeaders(block) {
 }
 
 /* --- Gadget Variables（与 src/shared/gadgetVariables.ts 一致）--- */
-function formatUnquotedReplacement(raw) {
+function formatUnquotedReplacement(raw: unknown): string {
   const t = String(raw).trim()
   try {
     const j = JSON.parse(t)
@@ -195,27 +215,33 @@ function formatUnquotedReplacement(raw) {
   return JSON.stringify(t)
 }
 
-function expandGadgetVariables(text, vars) {
-  if (text == null || text === '') return text
+function expandGadgetVariables(text: unknown, vars: GadgetVariables): string {
+  if (text == null || text === '') return text as string
   let out = String(text)
-  out = out.replace(/"\$gadget\.var\.([A-Za-z0-9_]+)"/g, function (full, name) {
-    if (!(name in vars)) return full
-    return JSON.stringify(vars[name])
-  })
-  out = out.replace(/\$gadget\.var\.([A-Za-z0-9_]+)/g, function (match, name) {
-    if (!(name in vars)) return match
-    return formatUnquotedReplacement(vars[name])
-  })
+  out = out.replace(
+    /"\$gadget\.var\.([A-Za-z0-9_]+)"/g,
+    function (full: string, name: string) {
+      if (!(name in vars)) return full
+      return JSON.stringify(vars[name])
+    }
+  )
+  out = out.replace(
+    /\$gadget\.var\.([A-Za-z0-9_]+)/g,
+    function (match: string, name: string) {
+      if (!(name in vars)) return match
+      return formatUnquotedReplacement(vars[name])
+    }
+  )
   return out
 }
 
-function parseVariablesForHook(raw) {
-  const out = {}
+function parseVariablesForHook(raw: unknown): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
   if (!raw || typeof raw !== 'object') return out
   const keys = Object.keys(raw)
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    const v = raw[k]
+    const v = (raw as Record<string, unknown>)[k]
     if (!k) continue
     const t = String(v).trim()
     try {
@@ -227,29 +253,32 @@ function parseVariablesForHook(raw) {
   return out
 }
 
-function normalizeVariablesPayload(raw) {
+function normalizeVariablesPayload(raw: unknown): GadgetVariables {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
-  const out = {}
+  const out: GadgetVariables = {}
   const keys = Object.keys(raw)
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    const v = raw[k]
+    const v = (raw as Record<string, unknown>)[k]
     if (typeof v === 'string') out[k] = v
-    else if (v === null || typeof v === 'number' || typeof v === 'boolean') out[k] = String(v)
+    else if (v === null || typeof v === 'number' || typeof v === 'boolean')
+      out[k] = String(v)
     else out[k] = JSON.stringify(v)
   }
   return out
 }
 
 /* --- response snippet（与 src/shared/responseSnippetRunner.ts 一致）--- */
-function isPlainObject(x) {
+function isPlainObject(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null && !Array.isArray(x)
 }
 
-function mergeG(target) {
-  const sources = Array.prototype.slice.call(arguments, 1)
+function mergeG<T extends Record<string, unknown>>(
+  target: T,
+  ...sources: unknown[]
+): T {
   if (!sources.length) return target
-  if (!isPlainObject(target)) return sources[0]
+  if (!isPlainObject(target)) return sources[0] as T
   for (let si = 0; si < sources.length; si++) {
     const src = sources[si]
     if (src == null) continue
@@ -258,30 +287,37 @@ function mergeG(target) {
     for (let ki = 0; ki < keys.length; ki++) {
       const key = keys[ki]
       const sv = src[key]
-      const tv = target[key]
+      const tv = (target as Record<string, unknown>)[key]
       if (isPlainObject(sv) && isPlainObject(tv)) {
         mergeG(tv, sv)
       } else {
-        target[key] = sv
+        ;(target as Record<string, unknown>)[key] = sv
       }
     }
   }
   return target
 }
 
-function pickG(obj, keys) {
+function pickG(obj: unknown, keys: string[]): Record<string, unknown> {
   if (obj == null || typeof obj !== 'object') return {}
-  const out = {}
+  const out: Record<string, unknown> = {}
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    if (k in obj) out[k] = obj[k]
+    if (k in (obj as Record<string, unknown>))
+      out[k] = (obj as Record<string, unknown>)[k]
   }
   return out
 }
 
-function isEqualG(a, b) {
+function isEqualG(a: unknown, b: unknown): boolean {
   if (Object.is(a, b)) return true
-  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return false
+  if (
+    a === null ||
+    b === null ||
+    typeof a !== 'object' ||
+    typeof b !== 'object'
+  )
+    return false
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false
     for (let i = 0; i < a.length; i++) {
@@ -290,34 +326,47 @@ function isEqualG(a, b) {
     return true
   }
   if (Array.isArray(a) || Array.isArray(b)) return false
-  const ak = Object.keys(a)
-  const bk = Object.keys(b)
+  const ak = Object.keys(a as Record<string, unknown>)
+  const bk = Object.keys(b as Record<string, unknown>)
   if (ak.length !== bk.length) return false
   for (let j = 0; j < ak.length; j++) {
     const k = ak[j]
-    if (!isEqualG(a[k], b[k])) return false
+    if (
+      !isEqualG(
+        (a as Record<string, unknown>)[k],
+        (b as Record<string, unknown>)[k]
+      )
+    )
+      return false
   }
   return true
 }
 
-function gadgetLodash() {
+interface GadgetLodash {
+  merge: typeof mergeG
+  pick: typeof pickG
+  isEqual: typeof isEqualG
+}
+
+function gadgetLodash(): GadgetLodash {
   return { merge: mergeG, pick: pickG, isEqual: isEqualG }
 }
 
-function chanceStub() {
-  return new Proxy(
-    {},
-    {
-      get: function () {
-        return function () {
-          return null
-        }
-      },
-    },
-  )
+interface ChanceStub {
+  [key: string]: () => null
 }
 
-function parseHookResponseRaw(text) {
+function chanceStub(): ChanceStub {
+  return new Proxy({} as ChanceStub, {
+    get: function () {
+      return function () {
+        return null
+      }
+    },
+  })
+}
+
+function parseHookResponseRaw(text: string): unknown {
   const s = String(text).trim()
   if (!s) return ''
   try {
@@ -327,11 +376,12 @@ function parseHookResponseRaw(text) {
   }
 }
 
-function stringifySnippetResult(result, fallbackRaw) {
+function stringifySnippetResult(result: unknown, fallbackRaw: string): string {
   if (result === undefined) return fallbackRaw
   if (result === null) return 'null'
   if (typeof result === 'string') return result
-  if (typeof result === 'number' || typeof result === 'boolean') return JSON.stringify(result)
+  if (typeof result === 'number' || typeof result === 'boolean')
+    return JSON.stringify(result)
   if (typeof result === 'bigint') return String(result)
   if (typeof result === 'object') {
     try {
@@ -343,18 +393,28 @@ function stringifySnippetResult(result, fallbackRaw) {
   return String(result)
 }
 
-function runResponseSnippet(opts) {
+interface RunResponseSnippetOptions {
+  snippet: string
+  responseRaw: string
+  url: string
+  method: string
+  body: string
+  hookVars: Record<string, unknown>
+}
+
+function runResponseSnippet(opts: RunResponseSnippetOptions): string {
   const snippet = opts.snippet
   const responseRaw = opts.responseRaw
   const url = opts.url
   const method = opts.method
   const body = opts.body
-  const hookVars = opts.hookVars && typeof opts.hookVars === 'object' ? opts.hookVars : {}
+  const hookVars =
+    opts.hookVars && typeof opts.hookVars === 'object' ? opts.hookVars : {}
   const t = String(snippet).trim()
   if (!t) return responseRaw
 
   const response = parseHookResponseRaw(responseRaw)
-  const vars = {}
+  const vars: Record<string, unknown> = {}
   const hk = Object.keys(hookVars)
   for (let vi = 0; vi < hk.length; vi++) {
     const k = hk[vi]
@@ -372,7 +432,7 @@ function runResponseSnippet(opts) {
       'vars',
       'chance',
       '_',
-      '"use strict";\n' + t,
+      '"use strict";\n' + t
     )
     const result = fn(response, url, method, body, vars, chance, _)
     return stringifySnippetResult(result, responseRaw)
@@ -382,11 +442,11 @@ function runResponseSnippet(opts) {
   }
 }
 
-function sleep(ms) {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function resolveUrl(url) {
+function resolveUrl(url: string): string {
   try {
     return new URL(String(url), document.baseURI).href
   } catch {
@@ -394,10 +454,11 @@ function resolveUrl(url) {
   }
 }
 
-async function normalizeBodyPart(b) {
+async function normalizeBodyPart(b: unknown): Promise<string> {
   if (b == null) return ''
   if (typeof b === 'string') return b
-  if (typeof URLSearchParams !== 'undefined' && b instanceof URLSearchParams) return b.toString()
+  if (typeof URLSearchParams !== 'undefined' && b instanceof URLSearchParams)
+    return b.toString()
   if (typeof Blob !== 'undefined' && b instanceof Blob) {
     try {
       return await b.text()
@@ -408,7 +469,11 @@ async function normalizeBodyPart(b) {
   return ''
 }
 
-async function getOutboundRequestBodyForHook(resource, config, bodyReplace) {
+async function getOutboundRequestBodyForHook(
+  resource: RequestInfo | URL,
+  config: RequestInit | undefined,
+  bodyReplace: string | null
+): Promise<string> {
   if (bodyReplace != null && String(bodyReplace).length > 0) {
     return String(bodyReplace)
   }
@@ -426,9 +491,16 @@ async function getOutboundRequestBodyForHook(resource, config, bodyReplace) {
   return ''
 }
 
-window.addEventListener('message', (event) => {
+interface GadgetUpdateRulesMessage {
+  type: 'GADGET_UPDATE_RULES'
+  globalEnabled: boolean
+  rules: Rule[]
+  variables: GadgetVariables
+}
+
+window.addEventListener('message', (event: MessageEvent) => {
   if (event.source !== window) return
-  const d = event.data
+  const d = event.data as GadgetUpdateRulesMessage
   if (d && d.type === 'GADGET_UPDATE_RULES') {
     gadgetGlobalEnabled = d.globalEnabled !== false
     gadgetRules = Array.isArray(d.rules) ? d.rules : []
@@ -437,7 +509,9 @@ window.addEventListener('message', (event) => {
 })
 
 const originalFetch = window.fetch
-window.fetch = async function gadgetFetch(...args) {
+window.fetch = async function gadgetFetch(
+  ...args: [input: RequestInfo | URL, init?: RequestInit]
+): Promise<Response> {
   const [resource, config] = args
   let url = ''
   if (typeof resource === 'string') {
@@ -449,7 +523,8 @@ window.fetch = async function gadgetFetch(...args) {
   }
 
   const method =
-    (config && config.method) || (resource instanceof Request ? resource.method : 'GET')
+    (config && config.method) ||
+    (resource instanceof Request ? resource.method : 'GET')
 
   const rule = findRule(url, method)
   if (!rule) {
@@ -458,16 +533,25 @@ window.fetch = async function gadgetFetch(...args) {
 
   if (isMockEnabled(rule)) {
     if (rule.delayMs) await sleep(Number(rule.delayMs) || 0)
-    const expHeaders = expandGadgetVariables(String(rule.responseHeaders || ''), gadgetVariables)
+    const expHeaders = expandGadgetVariables(
+      String(rule.responseHeaders || ''),
+      gadgetVariables
+    )
     const headers = parseHeaders(expHeaders)
     const status = Number(rule.statusCode) || 200
     const bodyForHook = expandGadgetVariables(
       await getOutboundRequestBodyForHook(resource, config, null),
-      gadgetVariables,
+      gadgetVariables
     )
-    const expPayload = expandGadgetVariables(String(rule.responsePayload), gadgetVariables)
+    const expPayload = expandGadgetVariables(
+      String(rule.responsePayload),
+      gadgetVariables
+    )
     const hookVars = parseVariablesForHook(gadgetVariables)
-    const sn = expandGadgetVariables(String(rule.responseSnippet || ''), gadgetVariables).trim()
+    const sn = expandGadgetVariables(
+      String(rule.responseSnippet || ''),
+      gadgetVariables
+    ).trim()
     let payloadOut = expPayload
     if (sn) {
       payloadOut = runResponseSnippet({
@@ -493,15 +577,23 @@ window.fetch = async function gadgetFetch(...args) {
     rule.requestPayload != null && String(rule.requestPayload).length > 0
       ? String(rule.requestPayload)
       : null
-  const bodyStr = bodyStrRaw ? expandGadgetVariables(bodyStrRaw, gadgetVariables) : null
+  const bodyStr = bodyStrRaw
+    ? expandGadgetVariables(bodyStrRaw, gadgetVariables)
+    : null
 
-  const snPass = expandGadgetVariables(String(rule.responseSnippet || ''), gadgetVariables).trim()
+  const snPass = expandGadgetVariables(
+    String(rule.responseSnippet || ''),
+    gadgetVariables
+  ).trim()
   const hookVarsPass = parseVariablesForHook(gadgetVariables)
   const requestBodyForHook = bodyStrRaw
     ? String(bodyStr)
-    : expandGadgetVariables(await getOutboundRequestBodyForHook(resource, config, null), gadgetVariables)
+    : expandGadgetVariables(
+        await getOutboundRequestBodyForHook(resource, config, null),
+        gadgetVariables
+      )
 
-  let res
+  let res: Response
   if (!bodyStr) {
     logGadgetMock(rule, url, method, '命中规则 · 透传网络', {
       delayMs: Number(rule.delayMs) || 0,
@@ -536,7 +628,7 @@ window.fetch = async function gadgetFetch(...args) {
             integrity: req.integrity,
             keepalive: req.keepalive,
             signal: req.signal,
-          }),
+          })
         )
       } catch {
         res = await originalFetch(req.url, {
@@ -568,35 +660,56 @@ window.fetch = async function gadgetFetch(...args) {
   })
 }
 
+interface GadgetXHR extends XMLHttpRequest {
+  _gadget_method?: string
+  _gadget_url?: string
+}
+
 const originalXHROpen = XMLHttpRequest.prototype.open
 const originalXHRSend = XMLHttpRequest.prototype.send
 
-XMLHttpRequest.prototype.open = function (...args) {
-  this._gadget_method = args[0]
-  this._gadget_url = args[1]
-  return originalXHROpen.apply(this, args)
+XMLHttpRequest.prototype.open = function (
+  this: GadgetXHR,
+  method: string,
+  url: string | URL,
+  ...rest: unknown[]
+): void {
+  this._gadget_method = method
+  this._gadget_url = String(url)
+  ;(originalXHROpen as any).apply(this, [method, url, ...rest])
 }
 
-XMLHttpRequest.prototype.send = function (...args) {
+XMLHttpRequest.prototype.send = function (
+  this: GadgetXHR,
+  body?: Document | XMLHttpRequestBodyInit | null
+): void {
   const method = this._gadget_method || 'GET'
   const url = resolveUrl(this._gadget_url || '')
 
   const rule = findRule(url, method)
   if (!rule) {
-    return originalXHRSend.apply(this, args)
+    originalXHRSend.call(this, body)
+    return
   }
 
   if (isMockEnabled(rule)) {
     const runMock = () => {
       const status = Number(rule.statusCode) || 200
-      const xhrBody = args[0] != null && typeof args[0] === 'string' ? String(args[0]) : ''
+      const xhrBody =
+        body != null && typeof body === 'string' ? String(body) : ''
       const bodyForHook = expandGadgetVariables(xhrBody, gadgetVariables)
-      const expPayload = expandGadgetVariables(String(rule.responsePayload), gadgetVariables)
+      const expPayload = expandGadgetVariables(
+        String(rule.responsePayload),
+        gadgetVariables
+      )
       const hookVars = parseVariablesForHook(gadgetVariables)
-      const sn = expandGadgetVariables(String(rule.responseSnippet || ''), gadgetVariables).trim()
-      let body = expPayload
+      const sn = expandGadgetVariables(
+        String(rule.responseSnippet || ''),
+        gadgetVariables
+      ).trim()
+      let responseBody = expPayload
       if (sn) {
-        body = runResponseSnippet({
+        responseBody = runResponseSnippet({
           snippet: sn,
           responseRaw: expPayload,
           url,
@@ -608,15 +721,27 @@ XMLHttpRequest.prototype.send = function (...args) {
       logGadgetMock(rule, url, method, 'MOCK 响应 (XHR)', {
         status,
         delayMs: Number(rule.delayMs) || 0,
-        bodyPreview: String(body).slice(0, 200),
+        bodyPreview: String(responseBody).slice(0, 200),
       })
-      Object.defineProperty(this, 'readyState', { value: 4, configurable: true })
-      Object.defineProperty(this, 'status', { value: status, configurable: true })
-      Object.defineProperty(this, 'response', { value: body, configurable: true })
-      Object.defineProperty(this, 'responseText', { value: body, configurable: true })
+      Object.defineProperty(this, 'readyState', {
+        value: 4,
+        configurable: true,
+      })
+      Object.defineProperty(this, 'status', {
+        value: status,
+        configurable: true,
+      })
+      Object.defineProperty(this, 'response', {
+        value: responseBody,
+        configurable: true,
+      })
+      Object.defineProperty(this, 'responseText', {
+        value: responseBody,
+        configurable: true,
+      })
 
-      const ev = new Event('readystatechange')
-      const loadEv = new Event('load')
+      const ev = new ProgressEvent('readystatechange')
+      const loadEv = new ProgressEvent('load')
       if (this.onreadystatechange) this.onreadystatechange(ev)
       if (this.onload) this.onload(loadEv)
       this.dispatchEvent(ev)
@@ -632,14 +757,19 @@ XMLHttpRequest.prototype.send = function (...args) {
     rule.requestPayload != null && String(rule.requestPayload).length > 0
       ? String(rule.requestPayload)
       : null
-  const bodyStr = bodyStrRaw ? expandGadgetVariables(bodyStrRaw, gadgetVariables) : null
-  if (bodyStr && (args[0] == null || typeof args[0] === 'string')) {
-    logGadgetMock(rule, url, method, '改写请求体 (XHR)', { bodyPreview: bodyStr.slice(0, 200) })
-    return originalXHRSend.call(this, bodyStr)
+  const bodyStr = bodyStrRaw
+    ? expandGadgetVariables(bodyStrRaw, gadgetVariables)
+    : null
+  if (bodyStr && (body == null || typeof body === 'string')) {
+    logGadgetMock(rule, url, method, '改写请求体 (XHR)', {
+      bodyPreview: bodyStr.slice(0, 200),
+    })
+    originalXHRSend.call(this, bodyStr)
+    return
   }
 
   logGadgetMock(rule, url, method, '命中规则 · 透传网络 (XHR)', {
     note: 'Response 为空或未配置可改写的请求体',
   })
-  return originalXHRSend.apply(this, args)
+  originalXHRSend.call(this, body)
 }

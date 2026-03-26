@@ -1,7 +1,7 @@
 {
   "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
+    { "path": "./tsconfig.app.json" }, // 扩展用配置
+    { "path": "./tsconfig.node.json" } // vite用配置
   ],
   "files": []
 }

@@ -33,7 +33,10 @@ export interface VariablesEditorProps {
   onChange: (v: GadgetVariables) => void
 }
 
-export function VariablesEditor({ initialVariables, onChange }: VariablesEditorProps) {
+export function VariablesEditor({
+  initialVariables,
+  onChange,
+}: VariablesEditorProps) {
   const [rows, setRows] = useState<Row[]>(() => rowsFromVars(initialVariables))
   const [nameError, setNameError] = useState<string | null>(null)
 
@@ -52,7 +55,7 @@ export function VariablesEditor({ initialVariables, onChange }: VariablesEditorP
         return next
       })
     },
-    [onChange],
+    [onChange]
   )
 
   const addRow = useCallback(() => {
@@ -67,12 +70,14 @@ export function VariablesEditor({ initialVariables, onChange }: VariablesEditorP
     (id: string) => {
       setRows((prev) => {
         const next = prev.filter((r) => r.id !== id)
-        const finalRows = next.length ? next : [{ id: newId(), name: '', value: '' }]
+        const finalRows = next.length
+          ? next
+          : [{ id: newId(), name: '', value: '' }]
         onChange(toVariables(finalRows))
         return finalRows
       })
     },
-    [onChange],
+    [onChange]
   )
 
   return (
@@ -81,10 +86,13 @@ export function VariablesEditor({ initialVariables, onChange }: VariablesEditorP
         <h2 className="variables-editor__title">自定义变量</h2>
         <p className="variables-editor__desc">
           在 Response / Request payload、Headers、Response snippet 中使用
-          <code>$gadget.var.变量名</code> 插值；脚本内用 <code>vars.变量名</code>。
+          <code>$gadget.var.变量名</code> 插值；脚本内用{' '}
+          <code>vars.变量名</code>。
         </p>
       </div>
-      {nameError ? <p className="variables-editor__error">{nameError}</p> : null}
+      {nameError ? (
+        <p className="variables-editor__error">{nameError}</p>
+      ) : null}
       <div className="variables-editor__table-wrap">
         <table className="variables-editor__table">
           <thead>
@@ -103,7 +111,9 @@ export function VariablesEditor({ initialVariables, onChange }: VariablesEditorP
                   <input
                     className="variables-editor__input variables-editor__input--name"
                     value={row.name}
-                    onChange={(e) => updateRow(row.id, { name: e.target.value })}
+                    onChange={(e) =>
+                      updateRow(row.id, { name: e.target.value })
+                    }
                     placeholder="e.g. token"
                     spellCheck={false}
                     autoComplete="off"
@@ -114,7 +124,9 @@ export function VariablesEditor({ initialVariables, onChange }: VariablesEditorP
                   <input
                     className="variables-editor__input"
                     value={row.value}
-                    onChange={(e) => updateRow(row.id, { value: e.target.value })}
+                    onChange={(e) =>
+                      updateRow(row.id, { value: e.target.value })
+                    }
                     placeholder="值（可为 JSON 字面量）"
                     spellCheck={false}
                     aria-label="变量值"
