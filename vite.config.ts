@@ -1,10 +1,30 @@
 import path from 'node:path'
 import { crx } from '@crxjs/vite-plugin'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import zip from 'vite-plugin-zip-pack'
 import manifest from './manifest.config.js'
 import { name, version } from './package.json'
+
+const injectTs = path.resolve(__dirname, 'src/content/inject.ts')
+
+/**
+ * inject 在页面 MAIN world 以普通 <script> 执行，顶层 let/const 会进入页面全局词法环境，
+ * 与部分站点已有绑定（如 minify 后的 A、u）冲突。包成 IIFE 后全部落在函数作用域内。
+ */
+function injectAsIife(): Plugin {
+  return {
+    name: 'inject-as-iife',
+    renderChunk(code, chunk) {
+      const id = chunk.facadeModuleId?.replace(/\\/g, '/')
+      if (!chunk.isEntry || !id?.endsWith('/src/content/inject.ts')) return null
+      return {
+        code: `(function(){\n${code}\n})();`,
+        map: null,
+      }
+    },
+  }
+}
 
 export default defineConfig({
   resolve: {
@@ -15,12 +35,13 @@ export default defineConfig({
   plugins: [
     react(),
     crx({ manifest }),
+    injectAsIife(),
     zip({ outDir: 'release', outFileName: `crx-${name}-${version}.zip` }),
   ],
   build: {
     rollupOptions: {
       input: {
-        inject: path.resolve(__dirname, 'src/content/inject.ts'),
+        inject: injectTs,
       },
       output: {
         entryFileNames: (chunkInfo) => {
