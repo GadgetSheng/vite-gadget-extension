@@ -49,3 +49,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     void pushStateToPage()
   }
 })
+
+// When a page is restored from bfcache the content script doesn't re-run, so
+// re-push the current storage state to keep the injected script up-to-date.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    void pushStateToPage()
+  }
+})
