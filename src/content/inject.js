@@ -1,11 +1,13 @@
 /* 页面 MAIN world：与 src/shared/matchRule.ts 逻辑保持一致 */
-import type { Rule, GadgetVariables } from '@/shared/rule'
 
+/** @type {boolean} */
 let gadgetGlobalEnabled = true
-let gadgetRules: Rule[] = []
-let gadgetVariables: GadgetVariables = {}
+/** @type {any[]} */
+let gadgetRules = []
+/** @type {Record<string, any>} */
+let gadgetVariables = {}
 
-function gadgetMockDebugOn(): boolean {
+function gadgetMockDebugOn() {
   try {
     return sessionStorage.getItem('gadget-mock-debug') === '1'
   } catch {
@@ -13,7 +15,7 @@ function gadgetMockDebugOn(): boolean {
   }
 }
 
-function tryParseSlashRegex(pattern: unknown): RegExp | null {
+function tryParseSlashRegex(pattern) {
   const s = String(pattern).trim()
   if (!s.startsWith('/') || s.length < 2) return null
   const last = s.lastIndexOf('/')
@@ -29,9 +31,9 @@ function tryParseSlashRegex(pattern: unknown): RegExp | null {
   }
 }
 
-function urlMatchHaystacks(requestUrl: string): string[] {
+function urlMatchHaystacks(requestUrl) {
   const u = String(requestUrl).trim()
-  const set = new Set<string>()
+  const set = new Set()
   set.add(u)
   try {
     set.add(decodeURI(u))
@@ -46,10 +48,7 @@ function urlMatchHaystacks(requestUrl: string): string[] {
   return [...set]
 }
 
-function substringMatchOnHaystacks(
-  haystacks: string[],
-  rawPattern: string
-): boolean {
+function substringMatchOnHaystacks(haystacks, rawPattern) {
   const rawLower = String(rawPattern).toLowerCase()
   for (let i = 0; i < haystacks.length; i++) {
     const h = String(haystacks[i]).toLowerCase()
@@ -62,7 +61,7 @@ function substringMatchOnHaystacks(
   return false
 }
 
-function urlRuleMatches(requestUrl: string, urlPattern: string): boolean {
+function urlRuleMatches(requestUrl, urlPattern) {
   const raw = String(urlPattern).trim()
   if (!raw) return false
   const u = String(requestUrl).trim()
@@ -97,21 +96,7 @@ function urlRuleMatches(requestUrl: string, urlPattern: string): boolean {
   return substringMatchOnHaystacks(haystacks, raw)
 }
 
-interface LogDetail {
-  status?: number
-  delayMs?: number
-  bodyPreview?: string
-  note?: string
-  [key: string]: unknown
-}
-
-function logGadgetMock(
-  rule: Rule,
-  requestUrl: string,
-  method: string,
-  outcome: string,
-  detail?: LogDetail
-): void {
+function logGadgetMock(rule, requestUrl, method, outcome, detail) {
   const info = {
     label: rule.label || '(无别名)',
     ruleId: rule.id,
@@ -128,20 +113,20 @@ function logGadgetMock(
   )
 }
 
-function methodMatches(ruleMethod: string, requestMethod: string): boolean {
+function methodMatches(ruleMethod, requestMethod) {
   const rm = (ruleMethod || 'GET').toUpperCase()
   if (rm === '*') return true
   return rm === (requestMethod || 'GET').toUpperCase()
 }
 
-function isMockEnabled(rule: Rule): boolean {
+function isMockEnabled(rule) {
   return !!(rule.responsePayload && String(rule.responsePayload).trim())
 }
 
-function findRule(requestUrl: string, requestMethod: string): Rule | undefined {
+function findRule(requestUrl, requestMethod) {
   if (!gadgetGlobalEnabled) return undefined
   const list = gadgetRules || []
-  let urlHitWrongMethod: Rule | null = null
+  let urlHitWrongMethod = null
   for (let i = 0; i < list.length; i++) {
     const r = list[i]
     if (!r.enabled) continue
@@ -177,8 +162,8 @@ function findRule(requestUrl: string, requestMethod: string): Rule | undefined {
   return undefined
 }
 
-function parseHeaders(block: unknown): Record<string, string> {
-  const h: Record<string, string> = {}
+function parseHeaders(block) {
+  const h = {}
   const text = block == null ? '' : String(block)
   if (!text.trim()) {
     h['Content-Type'] = 'application/json'
@@ -202,7 +187,7 @@ function parseHeaders(block: unknown): Record<string, string> {
 }
 
 /* --- Gadget Variables（与 src/shared/gadgetVariables.ts 一致）--- */
-function formatUnquotedReplacement(raw: unknown): string {
+function formatUnquotedReplacement(raw) {
   const t = String(raw).trim()
   try {
     const j = JSON.parse(t)
@@ -215,19 +200,19 @@ function formatUnquotedReplacement(raw: unknown): string {
   return JSON.stringify(t)
 }
 
-function expandGadgetVariables(text: unknown, vars: GadgetVariables): string {
-  if (text == null || text === '') return text as string
+function expandGadgetVariables(text, vars) {
+  if (text == null || text === '') return text
   let out = String(text)
   out = out.replace(
     /"\$gadget\.var\.([A-Za-z0-9_]+)"/g,
-    function (full: string, name: string) {
+    function (full, name) {
       if (!(name in vars)) return full
       return JSON.stringify(vars[name])
     }
   )
   out = out.replace(
     /\$gadget\.var\.([A-Za-z0-9_]+)/g,
-    function (match: string, name: string) {
+    function (match, name) {
       if (!(name in vars)) return match
       return formatUnquotedReplacement(vars[name])
     }
@@ -235,13 +220,13 @@ function expandGadgetVariables(text: unknown, vars: GadgetVariables): string {
   return out
 }
 
-function parseVariablesForHook(raw: unknown): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
+function parseVariablesForHook(raw) {
+  const out = {}
   if (!raw || typeof raw !== 'object') return out
   const keys = Object.keys(raw)
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    const v = (raw as Record<string, unknown>)[k]
+    const v = raw[k]
     if (!k) continue
     const t = String(v).trim()
     try {
@@ -253,13 +238,13 @@ function parseVariablesForHook(raw: unknown): Record<string, unknown> {
   return out
 }
 
-function normalizeVariablesPayload(raw: unknown): GadgetVariables {
+function normalizeVariablesPayload(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
-  const out: GadgetVariables = {}
+  const out = {}
   const keys = Object.keys(raw)
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    const v = (raw as Record<string, unknown>)[k]
+    const v = raw[k]
     if (typeof v === 'string') out[k] = v
     else if (v === null || typeof v === 'number' || typeof v === 'boolean')
       out[k] = String(v)
@@ -269,16 +254,13 @@ function normalizeVariablesPayload(raw: unknown): GadgetVariables {
 }
 
 /* --- response snippet（与 src/shared/responseSnippetRunner.ts 一致）--- */
-function isPlainObject(x: unknown): x is Record<string, unknown> {
+function isPlainObject(x) {
   return typeof x === 'object' && x !== null && !Array.isArray(x)
 }
 
-function mergeG<T extends Record<string, unknown>>(
-  target: T,
-  ...sources: unknown[]
-): T {
+function mergeG(target, ...sources) {
   if (!sources.length) return target
-  if (!isPlainObject(target)) return sources[0] as T
+  if (!isPlainObject(target)) return sources[0]
   for (let si = 0; si < sources.length; si++) {
     const src = sources[si]
     if (src == null) continue
@@ -287,29 +269,28 @@ function mergeG<T extends Record<string, unknown>>(
     for (let ki = 0; ki < keys.length; ki++) {
       const key = keys[ki]
       const sv = src[key]
-      const tv = (target as Record<string, unknown>)[key]
+      const tv = target[key]
       if (isPlainObject(sv) && isPlainObject(tv)) {
         mergeG(tv, sv)
       } else {
-        ;(target as Record<string, unknown>)[key] = sv
+        target[key] = sv
       }
     }
   }
   return target
 }
 
-function pickG(obj: unknown, keys: string[]): Record<string, unknown> {
+function pickG(obj, keys) {
   if (obj == null || typeof obj !== 'object') return {}
-  const out: Record<string, unknown> = {}
+  const out = {}
   for (let i = 0; i < keys.length; i++) {
     const k = keys[i]
-    if (k in (obj as Record<string, unknown>))
-      out[k] = (obj as Record<string, unknown>)[k]
+    if (k in obj) out[k] = obj[k]
   }
   return out
 }
 
-function isEqualG(a: unknown, b: unknown): boolean {
+function isEqualG(a, b) {
   if (Object.is(a, b)) return true
   if (
     a === null ||
@@ -326,38 +307,22 @@ function isEqualG(a: unknown, b: unknown): boolean {
     return true
   }
   if (Array.isArray(a) || Array.isArray(b)) return false
-  const ak = Object.keys(a as Record<string, unknown>)
-  const bk = Object.keys(b as Record<string, unknown>)
+  const ak = Object.keys(a)
+  const bk = Object.keys(b)
   if (ak.length !== bk.length) return false
   for (let j = 0; j < ak.length; j++) {
     const k = ak[j]
-    if (
-      !isEqualG(
-        (a as Record<string, unknown>)[k],
-        (b as Record<string, unknown>)[k]
-      )
-    )
-      return false
+    if (!isEqualG(a[k], b[k])) return false
   }
   return true
 }
 
-interface GadgetLodash {
-  merge: typeof mergeG
-  pick: typeof pickG
-  isEqual: typeof isEqualG
-}
-
-function gadgetLodash(): GadgetLodash {
+function gadgetLodash() {
   return { merge: mergeG, pick: pickG, isEqual: isEqualG }
 }
 
-interface ChanceStub {
-  [key: string]: () => null
-}
-
-function chanceStub(): ChanceStub {
-  return new Proxy({} as ChanceStub, {
+function chanceStub() {
+  return new Proxy({}, {
     get: function () {
       return function () {
         return null
@@ -366,7 +331,7 @@ function chanceStub(): ChanceStub {
   })
 }
 
-function parseHookResponseRaw(text: string): unknown {
+function parseHookResponseRaw(text) {
   const s = String(text).trim()
   if (!s) return ''
   try {
@@ -376,7 +341,7 @@ function parseHookResponseRaw(text: string): unknown {
   }
 }
 
-function stringifySnippetResult(result: unknown, fallbackRaw: string): string {
+function stringifySnippetResult(result, fallbackRaw) {
   if (result === undefined) return fallbackRaw
   if (result === null) return 'null'
   if (typeof result === 'string') return result
@@ -393,16 +358,7 @@ function stringifySnippetResult(result: unknown, fallbackRaw: string): string {
   return String(result)
 }
 
-interface RunResponseSnippetOptions {
-  snippet: string
-  responseRaw: string
-  url: string
-  method: string
-  body: string
-  hookVars: Record<string, unknown>
-}
-
-function runResponseSnippet(opts: RunResponseSnippetOptions): string {
+function runResponseSnippet(opts) {
   const snippet = opts.snippet
   const responseRaw = opts.responseRaw
   const url = opts.url
@@ -414,7 +370,7 @@ function runResponseSnippet(opts: RunResponseSnippetOptions): string {
   if (!t) return responseRaw
 
   const response = parseHookResponseRaw(responseRaw)
-  const vars: Record<string, unknown> = {}
+  const vars = {}
   const hk = Object.keys(hookVars)
   for (let vi = 0; vi < hk.length; vi++) {
     const k = hk[vi]
@@ -442,11 +398,11 @@ function runResponseSnippet(opts: RunResponseSnippetOptions): string {
   }
 }
 
-function sleep(ms: number): Promise<void> {
+function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function resolveUrl(url: string): string {
+function resolveUrl(url) {
   try {
     return new URL(String(url), document.baseURI).href
   } catch {
@@ -454,7 +410,7 @@ function resolveUrl(url: string): string {
   }
 }
 
-async function normalizeBodyPart(b: unknown): Promise<string> {
+async function normalizeBodyPart(b) {
   if (b == null) return ''
   if (typeof b === 'string') return b
   if (typeof URLSearchParams !== 'undefined' && b instanceof URLSearchParams)
@@ -469,11 +425,7 @@ async function normalizeBodyPart(b: unknown): Promise<string> {
   return ''
 }
 
-async function getOutboundRequestBodyForHook(
-  resource: RequestInfo | URL,
-  config: RequestInit | undefined,
-  bodyReplace: string | null
-): Promise<string> {
+async function getOutboundRequestBodyForHook(resource, config, bodyReplace) {
   if (bodyReplace != null && String(bodyReplace).length > 0) {
     return String(bodyReplace)
   }
@@ -491,16 +443,9 @@ async function getOutboundRequestBodyForHook(
   return ''
 }
 
-interface GadgetUpdateRulesMessage {
-  type: 'GADGET_UPDATE_RULES'
-  globalEnabled: boolean
-  rules: Rule[]
-  variables: GadgetVariables
-}
-
-window.addEventListener('message', (event: MessageEvent) => {
+window.addEventListener('message', (event) => {
   if (event.source !== window) return
-  const d = event.data as GadgetUpdateRulesMessage
+  const d = event.data
   if (d && d.type === 'GADGET_UPDATE_RULES') {
     gadgetGlobalEnabled = d.globalEnabled !== false
     gadgetRules = Array.isArray(d.rules) ? d.rules : []
@@ -509,26 +454,23 @@ window.addEventListener('message', (event: MessageEvent) => {
 })
 
 const originalFetch = window.fetch
-window.fetch = async function gadgetFetch(
-  ...args: [input: RequestInfo | URL, init?: RequestInit]
-): Promise<Response> {
-  const [resource, config] = args
+window.fetch = async function gadgetFetch(input, init) {
   let url = ''
-  if (typeof resource === 'string') {
-    url = resolveUrl(resource)
-  } else if (resource instanceof Request) {
-    url = resource.url
+  if (typeof input === 'string') {
+    url = resolveUrl(input)
+  } else if (input instanceof Request) {
+    url = input.url
   } else {
-    url = resource ? String(resource) : ''
+    url = input ? String(input) : ''
   }
 
   const method =
-    (config && config.method) ||
-    (resource instanceof Request ? resource.method : 'GET')
+    (init && init.method) ||
+    (input instanceof Request ? input.method : 'GET')
 
   const rule = findRule(url, method)
   if (!rule) {
-    return originalFetch.apply(this, args)
+    return originalFetch.apply(this, arguments)
   }
 
   if (isMockEnabled(rule)) {
@@ -540,7 +482,7 @@ window.fetch = async function gadgetFetch(
     const headers = parseHeaders(expHeaders)
     const status = Number(rule.statusCode) || 200
     const bodyForHook = expandGadgetVariables(
-      await getOutboundRequestBodyForHook(resource, config, null),
+      await getOutboundRequestBodyForHook(input, init, null),
       gadgetVariables
     )
     const expPayload = expandGadgetVariables(
@@ -589,30 +531,30 @@ window.fetch = async function gadgetFetch(
   const requestBodyForHook = bodyStrRaw
     ? String(bodyStr)
     : expandGadgetVariables(
-        await getOutboundRequestBodyForHook(resource, config, null),
+        await getOutboundRequestBodyForHook(input, init, null),
         gadgetVariables
       )
 
-  let res: Response
+  let res
   if (!bodyStr) {
     logGadgetMock(rule, url, method, '命中规则 · 透传网络', {
       delayMs: Number(rule.delayMs) || 0,
       note: 'Response 为空，未配置 Request 改写',
     })
-    res = await originalFetch.apply(this, args)
+    res = await originalFetch.apply(this, arguments)
   } else {
     logGadgetMock(rule, url, method, '改写请求体', {
       bodyPreview: bodyStr.slice(0, 200),
     })
 
-    if (typeof resource === 'string') {
-      res = await originalFetch(resource, {
-        ...(config || {}),
-        method: (config && config.method) || 'GET',
+    if (typeof input === 'string') {
+      res = await originalFetch(input, {
+        ...(init || {}),
+        method: (init && init.method) || 'GET',
         body: bodyStr,
       })
-    } else if (resource instanceof Request) {
-      const req = resource
+    } else if (input instanceof Request) {
+      const req = input
       try {
         res = await originalFetch(
           new Request(req.url, {
@@ -638,7 +580,7 @@ window.fetch = async function gadgetFetch(
         })
       }
     } else {
-      res = await originalFetch.apply(this, args)
+      res = await originalFetch.apply(this, arguments)
     }
   }
 
@@ -660,29 +602,16 @@ window.fetch = async function gadgetFetch(
   })
 }
 
-interface GadgetXHR extends XMLHttpRequest {
-  _gadget_method?: string
-  _gadget_url?: string
-}
-
 const originalXHROpen = XMLHttpRequest.prototype.open
 const originalXHRSend = XMLHttpRequest.prototype.send
 
-XMLHttpRequest.prototype.open = function (
-  this: GadgetXHR,
-  method: string,
-  url: string | URL,
-  ...rest: unknown[]
-): void {
+XMLHttpRequest.prototype.open = function (method, url, ...rest) {
   this._gadget_method = method
   this._gadget_url = String(url)
-  ;(originalXHROpen as any).apply(this, [method, url, ...rest])
+  originalXHROpen.apply(this, [method, url, ...rest])
 }
 
-XMLHttpRequest.prototype.send = function (
-  this: GadgetXHR,
-  body?: Document | XMLHttpRequestBodyInit | null
-): void {
+XMLHttpRequest.prototype.send = function (body) {
   const method = this._gadget_method || 'GET'
   const url = resolveUrl(this._gadget_url || '')
 

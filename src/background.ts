@@ -26,6 +26,8 @@ chrome.runtime.onStartup.addListener(() => {
 })
 void syncIconFromStorage()
 
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== 'local') return
   const ch = changes[STORAGE_KEYS.globalEnabled]

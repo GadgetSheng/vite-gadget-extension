@@ -2,7 +2,10 @@ import { getExtensionState } from '../storage'
 
 const MSG_TYPE = 'GADGET_UPDATE_RULES'
 
-console.log('[gadget-extension] Content script loaded.')
+/** 只在主 frame 时输出一次，避免每个图片资源加载都触发 */
+if (window === top) {
+  console.log('[gadget-extension] Content script loaded.')
+}
 
 function postRulesToPage(
   globalEnabled: boolean,

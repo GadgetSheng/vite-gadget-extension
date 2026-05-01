@@ -12,13 +12,15 @@ export default defineManifest({
     default_icon: {
       48: 'public/dark.png',
     },
-    default_popup: 'src/popup/index.html',
+  },
+  side_panel: {
+    default_path: 'src/sidepanel/index.html',
   },
   background: {
     service_worker: 'src/background.ts',
     type: 'module',
   },
-  permissions: ['storage'],
+  permissions: ['storage', 'sidePanel'],
   content_scripts: [
     {
       js: ['src/content/main.tsx'],
